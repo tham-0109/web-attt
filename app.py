@@ -5,7 +5,7 @@ import string
 import random
 
 # 1. CẤU HÌNH TRANG
-st.set_page_config(page_title="ATTT Mobile Pro", page_icon="🛡️", layout="centered")
+st.set_page_config(page_title="Sổ tay An toàn thông tin", page_icon="🛡️", layout="centered")
 
 # CSS để tối ưu giao diện di động
 st.markdown("""
