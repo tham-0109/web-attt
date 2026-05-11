@@ -83,15 +83,34 @@ if menu == "Bản tin":
         else:
             st.warning("Không thể kết nối lấy tin tự động.")
 
-if menu == "📰 Tin tức mới":
+elif menu == "Tin tức mới":
     st.title("📰 Bản tin An toàn thông tin")
-    df_news = load_data(URL_TIN_TUC)
+    
+    # --- PHẦN 1: TIN NỘI BỘ (Từ Google Sheets) ---
+    st.subheader("📌 Thông báo nội bộ")
+    df_news = load_data(get_url("0"))
     if df_news is not None:
         for _, row in df_news.iterrows():
-            with st.expander(f"📌 {row['Ngày']} - {row['Tiêu đề']}"):
+            with st.expander(f"📍 {row['Ngày']} - {row['Tiêu đề']}"):
                 st.write(row['Nội dung'])
+    
+    st.divider() # Dấu gạch ngang ngăn cách
+
+    # --- PHẦN 2: TIN TỰ ĐỘNG (Từ VnExpress) ---
+    st.subheader("🌐 Tin an ninh mạng thế giới")
+    import feedparser
+    rss_url = "https://vnexpress.net/rss/so-hoa/bao-mat.rss"
+    feed = feedparser.parse(rss_url)
+    
+    if feed.entries:
+        for entry in feed.entries[:5]: # Lấy 5 tin mới nhất
+            with st.container():
+                # Hiển thị tiêu đề có gắn link và ngày đăng
+                st.markdown(f"**[{entry.title}]({entry.link})**")
+                st.caption(f"📅 {entry.published}")
+                st.divider()
     else:
-        st.error("Lỗi kết nối dữ liệu Tin tức.")
+        st.info("Đang cập nhật tin tức từ hệ thống...")
 
 elif menu == "🚫 Các điều cấm":
     st.title("🚫 Các hành vi bị nghiêm cấm")
