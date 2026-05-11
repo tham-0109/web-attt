@@ -15,7 +15,7 @@ st.markdown("""
     .stButton>button { width: 100%; border-radius: 10px; height: 3em; background-color: #0d6efd; color: white; }
     .stTextInput>div>div>input { border-radius: 10px; }
     </style>
-    """, unsafe_allow_input=True)
+  """, unsafe_allow_html=True)
 
 # 2. HÀNH LANG BẢO MẬT (Chỉ bạn mới truy cập được)
 # Thay '123456' bằng mật khẩu riêng của bạn
