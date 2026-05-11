@@ -3,10 +3,9 @@ import pandas as pd
 import re
 import feedparser
 
-# --- CẤU HÌNH GIAO DIỆN ---
+# --- 1. CẤU HÌNH TRANG ---
 st.set_page_config(page_title="Hệ thống ATTT Mobile", page_icon="🛡️", layout="centered")
 
-# CSS tùy chỉnh để các nút bấm và ô nhập liệu to, dễ bấm trên điện thoại
 st.markdown("""
     <style>
     .stButton>button { width: 100%; border-radius: 10px; height: 3.5em; background-color: #0d6efd; color: white; }
@@ -14,30 +13,27 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- CẤU HÌNH KẾT NỐI GOOGLE SHEETS ---
-# Thay 'ID_FILE_CUA_BAN' bằng ID thực tế từ đường link Google Sheets của bạn
-GOOGLE_SHEET_ID = "1ppqrGTWXqRDNx2FVxNnMaPrLVan39hrb_9hXJ7oJ98M"
+# --- 2. HÀNH LANG BẢO MẬT (Lấy từ Secrets) ---
+try:
+    ID_SHEET = st.secrets["id_google_sheet"]
+    GID_DC = st.secrets["id_tab_dieucam"]
+    XAC_THUC = st.secrets["password_hethong"]
+except KeyError as e:
+    st.error(f"Thiếu cấu hình trong Secrets: {e}")
+    st.stop()
 
+# Hàm tạo link chuẩn
 def get_sheet_url(gid):
-    return f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=csv&gid={gid}"
+    return f"https://docs.google.com/spreadsheets/d/{ID_SHEET}/export?format=csv&gid={gid}"
 
-# GID là ID của từng Tab (thường Tab đầu tiên là 0, Tab thứ hai bạn xem ở cuối link web khi bấm vào Tab đó)
-URL_TIN_TUC = get_sheet_url("0") 
-URL_DIEU_CAM = get_sheet_url("1866776495") # Thay ID Tab Điều Cấm vào đây (ví dụ: 12345678)
-
-@st.cache_data(ttl=60) # Tự động làm mới dữ liệu sau mỗi 60 giây
+@st.cache_data(ttl=60)
 def load_data(url):
     try:
         return pd.read_csv(url)
     except:
         return None
 
-# --- HÀNH LANG BẢO MẬT ---
-# Chúng ta gọi bằng "Tên biến" đã đặt trong Secrets, không phải dán ID trực tiếp vào đây
-GOOGLE_SHEET_ID = st.secrets["id_google_sheet"]
-GID_DIEUCAM = st.secrets["id_tab_dieucam"]
-XAC_THUC = st.secrets["password_hethong"]
-
+# --- 3. SIDEBAR MENU ---
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/shield.png", width=60)
     st.title("Hệ thống Nội bộ")
@@ -52,110 +48,67 @@ with st.sidebar:
         ("📰 Tin tức mới", "🚫 Các điều cấm", "🛠️ Công cụ Check", "🚨 Khẩn cấp")
     )
 
-# --- XỬ LÝ NỘI DUNG ---
-if menu == "Bản tin":
-    st.header("📰 Bản tin An toàn mạng")
+# --- 4. XỬ LÝ NỘI DUNG ---
+
+if menu == "📰 Tin tức mới":
+    st.title("📰 Bản tin An toàn thông tin")
     
     # Tạo tab để phân loại nguồn tin
-    tab_manual, tab_auto = st.tabs(["📌 Tin nội bộ", "🌐 Tin quốc tế/Hệ thống"])
+    tab_manual, tab_auto = st.tabs(["📌 Tin nội bộ", "🌐 Tin quốc tế"])
     
     with tab_manual:
-        st.subheader("Dữ liệu từ Google Sheets")
-        df = load_data(get_url("0"))
-        if df is not None:
-            for _, row in df.iterrows():
-                with st.expander(f"📌 {row['Ngày']} - {row['Tiêu đề']}"):
+        st.subheader("Thông báo từ quản trị")
+        # Sửa lỗi gọi hàm get_sheet_url ở đây
+        df_news = load_data(get_sheet_url("0")) 
+        if df_news is not None:
+            for _, row in df_news.iterrows():
+                with st.expander(f"📍 {row['Ngày']} - {row['Tiêu đề']}"):
                     st.write(row['Nội dung'])
+        else:
+            st.info("Chưa có tin nội bộ mới.")
 
     with tab_auto:
-        st.subheader("Tin tức tự động từ VnExpress")
-        # Đường dẫn RSS của VnExpress mục Bảo mật
+        st.subheader("Tin an ninh mạng thế giới")
         rss_url = "https://vnexpress.net/rss/so-hoa/bao-mat.rss"
         feed = feedparser.parse(rss_url)
-        
         if feed.entries:
-            for entry in feed.entries[:5]: # Lấy 5 tin mới nhất
+            for entry in feed.entries[:5]:
                 with st.container():
                     st.markdown(f"**[{entry.title}]({entry.link})**")
-                    st.caption(f"Ngày đăng: {entry.published}")
-                    st.write(entry.summary.split("<br>")[0]) # Lấy phần tóm tắt ngắn
+                    st.caption(f"📅 {entry.published}")
                     st.divider()
         else:
             st.warning("Không thể kết nối lấy tin tự động.")
 
-elif menu == "Tin tức mới":
-    st.title("📰 Bản tin An toàn thông tin")
-    
-    # --- PHẦN 1: TIN NỘI BỘ (Từ Google Sheets) ---
-    st.subheader("📌 Thông báo nội bộ")
-    df_news = load_data(get_url("0"))
-    if df_news is not None:
-        for _, row in df_news.iterrows():
-            with st.expander(f"📍 {row['Ngày']} - {row['Tiêu đề']}"):
-                st.write(row['Nội dung'])
-    
-    st.divider() # Dấu gạch ngang ngăn cách
-
-    # --- PHẦN 2: TIN TỰ ĐỘNG (Từ VnExpress) ---
-    st.subheader("🌐 Tin an ninh mạng thế giới")
-    import feedparser
-    rss_url = "https://vnexpress.net/rss/so-hoa/bao-mat.rss"
-    feed = feedparser.parse(rss_url)
-    
-    if feed.entries:
-        for entry in feed.entries[:5]: # Lấy 5 tin mới nhất
-            with st.container():
-                # Hiển thị tiêu đề có gắn link và ngày đăng
-                st.markdown(f"**[{entry.title}]({entry.link})**")
-                st.caption(f"📅 {entry.published}")
-                st.divider()
-    else:
-        st.info("Đang cập nhật tin tức từ hệ thống...")
-
 elif menu == "🚫 Các điều cấm":
     st.title("🚫 Các hành vi bị nghiêm cấm")
-    st.info("Danh sách các hành vi vi phạm pháp luật và quy định an toàn mạng.")
-    df_prohibited = load_data(URL_DIEU_CAM)
+    df_prohibited = load_data(get_sheet_url(GID_DC))
     if df_prohibited is not None:
         for _, row in df_prohibited.iterrows():
             with st.expander(f"❌ {row['Danh mục']}", expanded=True):
                 st.write(row['Chi tiết'])
     else:
-        st.error("Lỗi kết nối dữ liệu Điều cấm.")
+        st.error("Không thể kết nối dữ liệu Điều cấm.")
 
 elif menu == "🛠️ Công cụ Check":
     st.title("🛠️ Công cụ kiểm tra nhanh")
-    
-    # Kiểm tra mật khẩu
     st.subheader("1. Độ mạnh mật khẩu")
     test_pw = st.text_input("Nhập mật khẩu:", type="password")
     if test_pw:
-        if len(test_pw) < 8:
-            st.error("Quá yếu: Cần ít nhất 8 ký tự.")
-        elif not re.search("[0-9]", test_pw) or not re.search("[A-Z]", test_pw):
-            st.warning("Trung bình: Nên thêm số và chữ hoa.")
-        else:
-            st.success("Mật khẩu rất mạnh!")
+        if len(test_pw) < 8: st.error("Quá yếu!")
+        elif not re.search("[0-9]", test_pw) or not re.search("[A-Z]", test_pw): st.warning("Trung bình.")
+        else: st.success("Rất mạnh!")
 
-    # Kiểm tra Link
     st.subheader("2. Quét Link nghi vấn")
-    url_in = st.text_input("Dán đường link cần kiểm tra:")
+    url_in = st.text_input("Dán link:")
     if url_in:
-        bad_words = ['bit.ly', 'tinyurl.com', 'shopee-vouchers', 'larksuite']
-        if any(word in url_in.lower() for word in bad_words):
-            st.error("🚨 Cảnh báo: Link có dấu hiệu lừa đảo!")
-        else:
-            st.info("Chưa phát hiện dấu hiệu xấu. Hãy luôn cẩn thận.")
+        bad_words = ['bit.ly', 'tinyurl.com', 'shopee', 'lark']
+        if any(word in url_in.lower() for word in bad_words): st.error("🚨 Cảnh báo lừa đảo!")
+        else: st.info("Chưa thấy dấu hiệu xấu.")
 
 elif menu == "🚨 Khẩn cấp":
     st.title("🚨 Quy trình khẩn cấp")
-    st.markdown("""
-    ### Khi nghi ngờ bị hack:
-    1. **Ngắt mạng** (Tắt Wifi/4G).
-    2. **Đăng xuất** tất cả thiết bị từ xa.
-    3. **Thay đổi mật khẩu** email khôi phục.
-    4. **Liên hệ** phòng kỹ thuật: **0123.456.789**
-    """)
-    if st.button("GỌI HỖ TRỢ NGAY"):
+    st.warning("Hãy ngắt kết nối mạng ngay nếu nghi ngờ bị hack!")
+    st.write("- Liên hệ kỹ thuật: **0123.456.789**")
+    if st.button("GỌI HỖ TRỢ"):
         st.balloons()
-        st.write("Đang kết nối với tổng đài viên...")
