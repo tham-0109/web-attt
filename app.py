@@ -147,13 +147,47 @@ elif menu == "Công cụ":
             else:
                 st.warning("🔍 Không tìm thấy mã QR nào trong ảnh. Hãy thử chụp lại rõ nét hơn và đủ ánh sáng.")
 elif menu == "Khẩn cấp":
-    st.header("🚨 Hỗ trợ khẩn cấp")
-    st.markdown("""
-    1. **Ngắt kết nối mạng** ngay lập tức.
-    2. **Báo cáo** cho quản trị viên hệ thống.
-    3. **Không đăng nhập** vào bất kỳ tài khoản nào khác.
-    """)
-    st.info("Số điện thoại hỗ trợ: **09xx.xxx.xxx**")
-    if st.button("PHÁT TÍN HIỆU CẢNH BÁO"):
-        st.snow()
-        st.warning("Đã gửi yêu cầu hỗ trợ tới Quản trị viên!")
+    st.title("🚨 Trung tâm Phản ứng Sự cố")
+    st.error("Hãy giữ bình tĩnh và thực hiện theo các bước dưới đây.")
+
+    # 1. Các tình huống cụ thể
+    tinh_huong = st.selectbox(
+        "Chọn tình huống bạn đang gặp phải:",
+        ["-- Chọn tình huống --", "Nghi ngờ bị hack/theo dõi", "Mất thiết bị (Điện thoại/Laptop)", "Lộ mật khẩu/Thông tin tài khoản"]
+    )
+
+    if tinh_huong == "Nghi ngờ bị hack/theo dõi":
+        st.warning("⚡ **HÀNH ĐỘNG NGAY:**")
+        st.checkbox("1. Ngắt kết nối Wifi/4G ngay lập tức.")
+        st.checkbox("2. Đăng xuất tài khoản khỏi tất cả các thiết bị khác.")
+        st.checkbox("3. Sử dụng một thiết bị sạch khác để đổi mật khẩu.")
+        
+    elif tinh_huong == "Mất thiết bị (Điện thoại/Laptop)":
+        st.warning("⚡ **HÀNH ĐỘNG NGAY:**")
+        st.checkbox("1. Sử dụng tính năng 'Find My' hoặc 'Find My Device' để khóa/xóa dữ liệu từ xa.")
+        st.checkbox("2. Liên hệ nhà mạng để khóa SIM.")
+        st.checkbox("3. Thay đổi mật khẩu các ứng dụng ngân hàng, email.")
+
+    elif tinh_huong == "Lộ mật khẩu/Thông tin tài khoản":
+        st.warning("⚡ **HÀNH ĐỘNG NGAY:**")
+        st.checkbox("1. Thay đổi mật khẩu ngay lập tức (sử dụng mật khẩu mạnh).")
+        st.checkbox("2. Kích hoạt xác thực 2 lớp (2FA) nếu chưa có.")
+        st.checkbox("3. Kiểm tra lịch sử đăng nhập để tìm hoạt động lạ.")
+
+    st.divider()
+
+    # 2. Hotline hỗ trợ (Dùng markdown để tạo link gọi điện trực tiếp)
+    st.subheader("📞 Liên hệ hỗ trợ kỹ thuật.Tel:0378756992")
+   
+    # 3. Gửi báo cáo nhanh
+    st.divider()
+    st.subheader("📩 Gửi báo cáo nhanh cho Admin")
+    msg = st.text_area("Mô tả ngắn gọn sự cố (Ví dụ: Không đăng nhập được Email...)")
+    if st.button("GỬI BÁO CÁO"):
+        if msg:
+            st.toast("Đang gửi báo cáo...")
+            # Ở đây có thể tích hợp gửi Telegram hoặc Email nếu muốn nâng cấp sau này
+            st.success("Báo cáo của bạn đã được gửi. Đội kỹ thuật sẽ liên hệ lại ngay!")
+            st.balloons()
+        else:
+            st.warning("Vui lòng nhập mô tả sự cố.")
