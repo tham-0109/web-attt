@@ -23,6 +23,7 @@ st.markdown("""
 try:
     SHEET_ID = st.secrets["id_google_sheet"]
     GID_DC = st.secrets["id_tab_dieucam"]
+    GID_NC = st.secrets["id_tab_Nguyco"]
     MAT_KHAU_HE_THONG = st.secrets["password_hethong"]
 except Exception as e:
     st.error(f"Lỗi cấu hình Secrets: {e}")
