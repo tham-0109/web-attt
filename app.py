@@ -177,7 +177,7 @@ elif menu == "Khẩn cấp":
     st.divider()
 
     # 2. Hotline hỗ trợ (Dùng markdown để tạo link gọi điện trực tiếp)
-    st.subheader("📞 Liên hệ hỗ trợ kỹ thuật.Tel:0378756992")
+    st.subheader("📞 Liên hệ hỗ trợ kỹ thuật. Tel:0378756992")
    
     # 3. Gửi báo cáo nhanh
     st.divider()
