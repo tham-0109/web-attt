@@ -39,14 +39,21 @@ def load_data(url):
 
 # 3. GIAO DIỆN BẢO MẬT (SIDEBAR)
 with st.sidebar:
-    st.title("🛡️ SECURITY SYSTEM")
+    st.title("🛡️ SỔ TAY ATTT")
     pw = st.text_input("Mật khẩu truy cập:", type="password")
-    if pw != MAT_KHAU_HE_THONG:
-        st.info("Vui lòng nhập mật khẩu để tiếp tục.")
+    if pw != XAC_THUC:
+        st.warning("Vui lòng nhập mật khẩu.")
         st.stop()
     
-    st.success("Xác thực thành công!")
-   menu = st.radio("DANH MỤC", ("📰 Tin tức", "🚫 Các điều cấm", "🛡️ Nguy cơ & Biện pháp", "🛠️ Công cụ", "🚨 Khẩn cấp"))
+    st.success("Đã mở khóa")
+    # CĂN LỀ CHUẨN DÒNG 49
+    menu = st.radio("DANH MỤC", (
+        "📰 Tin tức", 
+        "🚫 Các điều cấm", 
+        "🛡️ Nguy cơ & Biện pháp", 
+        "🛠️ Công cụ", 
+        "🚨 Khẩn cấp"
+    ))
 
 # 4. XỬ LÝ CÁC MỤC
 if menu == "Bản tin":
