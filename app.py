@@ -32,7 +32,10 @@ def load_data(url):
         return None
 
 # --- HÀNH LANG BẢO MẬT ---
-XAC_THUC = "123456" # Bạn nên đổi mật khẩu này
+# Thay vì viết ID và Mật khẩu trực tiếp, hãy dùng dòng này:
+GOOGLE_SHEET_ID = st.secrets["1ppqrGTWXqRDNx2FVxNnMaPrLVan39hrb_9hXJ7oJ98M"]
+GID_DIEUCAM = st.secrets["1866776495"]
+XAC_THUC = st.secrets["123456"]
 
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/shield.png", width=60)
