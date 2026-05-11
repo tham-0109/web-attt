@@ -21,7 +21,7 @@ st.markdown("""
 try:
     ID_SHEET = st.secrets["id_google_sheet"]
     GID_DC = st.secrets["id_tab_dieucam"]
-    GID_NC = st.secrets["id_tab_nguyco"]
+    GID_NC = st.secrets["id_tab_Nguyco"]
     XAC_THUC = st.secrets["password_hethong"]
 except Exception as e:
     st.error(f"Lỗi cấu hình Secrets: {e}")
