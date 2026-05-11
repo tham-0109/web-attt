@@ -21,7 +21,7 @@ st.markdown("""
 try:
     ID_SHEET = st.secrets["id_google_sheet"]
     GID_DC = st.secrets["id_tab_dieucam"]
-    GID_NC = st.secrets["id_tab_Nguyco"]
+    GID_NC = st.secrets["id_tab_nguyco"]
     XAC_THUC = st.secrets["password_hethong"]
 except Exception as e:
     st.error(f"Lỗi cấu hình Secrets: {e}")
@@ -44,7 +44,6 @@ with st.sidebar:
         st.stop()
     
     st.success("Đã mở khóa")
-    # CĂN LỀ CHUẨN DÒNG 49
     menu = st.radio("DANH MỤC", (
         "📰 Tin tức", 
         "🚫 Các điều cấm", 
@@ -52,6 +51,7 @@ with st.sidebar:
         "🛠️ Công cụ", 
         "🚨 Khẩn cấp"
     ))
+
 # 4. XỬ LÝ NỘI DUNG
 if menu == "📰 Tin tức":
     st.header("📰 Bản tin An toàn thông tin")
@@ -84,7 +84,7 @@ elif menu == "🛡️ Nguy cơ & Biện pháp":
     df_risk = load_data(get_sheet_url(GID_NC))
     if df_risk is not None:
         for _, row in df_risk.iterrows():
-            with st.expander(f"⚠️ Nguy cơ: {row['Nguy cơ']}"):
+            with st.expander(f"⚠️ {row['Nguy cơ']}"):
                 st.info(f"**Biện pháp bảo đảm:**\n\n{row['Biện pháp bảo đảm']}")
     else:
         st.error("Chưa thể kết nối dữ liệu Nguy cơ.")
@@ -97,18 +97,22 @@ elif menu == "🛠️ Công cụ":
         if p:
             score = sum([len(p)>=8, any(c.isupper() for c in p), any(c.isdigit() for c in p)])
             if score == 3: st.success("Mật khẩu mạnh")
-            else: st.warning("Mật khẩu yếu")
+            else: st.warning("Mật khẩu cần cải thiện")
     with tab_qr:
         from pyzbar.pyzbar import decode
         img = st.camera_input("Quét mã QR")
         if img:
             res = decode(Image.open(img))
-            if res: st.code(res[0].data.decode("utf-8"))
+            if res:
+                content = res[0].data.decode("utf-8")
+                st.success("Nội dung mã QR:")
+                st.code(content)
             else: st.warning("Không tìm thấy mã.")
 
 elif menu == "🚨 Khẩn cấp":
     st.header("🚨 Phản ứng Sự cố")
     st.warning("⚡ HÀNH ĐỘNG NGAY:")
-    st.checkbox("Ngắt kết nối Internet thiết bị")
-    st.checkbox("Thông báo cho quản trị viên")
-    st.markdown('[📞 GỌI HOTLINE HỖ TRỢ](tel:0901234567)', unsafe_allow_html=True))
+    st.checkbox("1. Ngắt kết nối Internet thiết bị.")
+    st.checkbox("2. Thông báo ngay cho quản trị viên kỹ thuật.")
+    # Sửa lỗi Syntax tại đây bằng cách bọc markdown chuẩn
+    st.markdown("[📞 GỌI HOTLINE HỖ TRỢ](tel:0901234567)", unsafe_allow_html=True)
