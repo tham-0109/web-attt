@@ -2,51 +2,108 @@ import streamlit as st
 import pandas as pd
 import re
 
-# 1. CẤU HÌNH TRANG
-st.set_page_config(page_title="Hệ thống ATTT Mobile", page_icon="🛡️")
+# --- CẤU HÌNH GIAO DIỆN ---
+st.set_page_config(page_title="Hệ thống ATTT Mobile", page_icon="🛡️", layout="centered")
 
-# --- KẾT NỐI DỮ LIỆU GOOGLE SHEETS ---
-# THAY LINK DƯỚI ĐÂY BẰNG LINK CỦA BẠN (đã đổi đuôi thành /export?format=csv)
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1ppqrGTWXqRDNx2FVxNnMaPrLVan39hrb_9hXJ7oJ98M/export?format=csv"
+# CSS tùy chỉnh để các nút bấm và ô nhập liệu to, dễ bấm trên điện thoại
+st.markdown("""
+    <style>
+    .stButton>button { width: 100%; border-radius: 10px; height: 3.5em; background-color: #0d6efd; color: white; }
+    .stExpander { border-radius: 10px; border: 1px solid #ddd; margin-bottom: 10px; }
+    </style>
+    """, unsafe_allow_html=True)
 
-def load_data():
+# --- CẤU HÌNH KẾT NỐI GOOGLE SHEETS ---
+# Thay 'ID_FILE_CUA_BAN' bằng ID thực tế từ đường link Google Sheets của bạn
+GOOGLE_SHEET_ID = "1ppqrGTWXqRDNx2FVxNnMaPrLVan39hrb_9hXJ7oJ98M"
+
+def get_sheet_url(gid):
+    return f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=csv&gid={gid}"
+
+# GID là ID của từng Tab (thường Tab đầu tiên là 0, Tab thứ hai bạn xem ở cuối link web khi bấm vào Tab đó)
+URL_TIN_TUC = get_sheet_url("0") 
+URL_DIEU_CAM = get_sheet_url("1866776495") # Thay ID Tab Điều Cấm vào đây (ví dụ: 12345678)
+
+@st.cache_data(ttl=60) # Tự động làm mới dữ liệu sau mỗi 60 giây
+def load_data(url):
     try:
-        return pd.read_csv(SHEET_URL)
+        return pd.read_csv(url)
     except:
         return None
 
-# 2. BẢO MẬT TRUY CẬP
-XAC_THUC = "123456" 
+# --- HÀNH LANG BẢO MẬT ---
+XAC_THUC = "123456" # Bạn nên đổi mật khẩu này
 
 with st.sidebar:
-    st.title("🛡️ Quản trị")
-    pw_input = st.text_input("Mật khẩu:", type="password")
-    if pw_input != XAC_THUC:
-        st.warning("Vui lòng nhập mật khẩu.")
+    st.image("https://img.icons8.com/fluency/96/shield.png", width=60)
+    st.title("Hệ thống Nội bộ")
+    pw = st.text_input("Mật khẩu truy cập:", type="password")
+    if pw != XAC_THUC:
+        st.warning("Vui lòng nhập đúng mật khẩu.")
         st.stop()
     
-    menu = st.radio("CHỨC NĂNG", ("📰 Tin tức", "🛠️ Công cụ", "🚨 Khẩn cấp"))
+    st.success("Đã mở khóa")
+    menu = st.radio(
+        "DANH MỤC",
+        ("📰 Tin tức mới", "🚫 Các điều cấm", "🛠️ Công cụ Check", "🚨 Khẩn cấp")
+    )
 
-# 3. NỘI DUNG CHÍNH
-if menu == "📰 Tin tức":
+# --- XỬ LÝ NỘI DUNG ---
+
+if menu == "📰 Tin tức mới":
     st.title("📰 Bản tin An toàn thông tin")
-    df = load_data()
-    
-    if df is not None:
-        for index, row in df.iterrows():
+    df_news = load_data(URL_TIN_TUC)
+    if df_news is not None:
+        for _, row in df_news.iterrows():
             with st.expander(f"📌 {row['Ngày']} - {row['Tiêu đề']}"):
                 st.write(row['Nội dung'])
     else:
-        st.error("Không thể kết nối với dữ liệu Google Sheets.")
+        st.error("Lỗi kết nối dữ liệu Tin tức.")
 
-elif menu == "🛠️ Công cụ":
-    st.title("🛠️ Công cụ bảo mật")
-    # (Giữ lại các code kiểm tra mật khẩu và link từ bước trước ở đây)
-    pw = st.text_input("Kiểm tra mật khẩu:", type="password")
-    if pw:
-        if len(pw) >= 8: st.success("Mật khẩu đủ độ dài.")
-        else: st.error("Mật khẩu quá ngắn.")
+elif menu == "🚫 Các điều cấm":
+    st.title("🚫 Các hành vi bị nghiêm cấm")
+    st.info("Danh sách các hành vi vi phạm pháp luật và quy định an toàn mạng.")
+    df_prohibited = load_data(URL_DIEU_CAM)
+    if df_prohibited is not None:
+        for _, row in df_prohibited.iterrows():
+            with st.expander(f"❌ {row['Danh mục']}", expanded=True):
+                st.write(row['Chi tiết'])
+    else:
+        st.error("Lỗi kết nối dữ liệu Điều cấm.")
+
+elif menu == "🛠️ Công cụ Check":
+    st.title("🛠️ Công cụ kiểm tra nhanh")
+    
+    # Kiểm tra mật khẩu
+    st.subheader("1. Độ mạnh mật khẩu")
+    test_pw = st.text_input("Nhập mật khẩu:", type="password")
+    if test_pw:
+        if len(test_pw) < 8:
+            st.error("Quá yếu: Cần ít nhất 8 ký tự.")
+        elif not re.search("[0-9]", test_pw) or not re.search("[A-Z]", test_pw):
+            st.warning("Trung bình: Nên thêm số và chữ hoa.")
+        else:
+            st.success("Mật khẩu rất mạnh!")
+
+    # Kiểm tra Link
+    st.subheader("2. Quét Link nghi vấn")
+    url_in = st.text_input("Dán đường link cần kiểm tra:")
+    if url_in:
+        bad_words = ['bit.ly', 'tinyurl.com', 'shopee-vouchers', 'larksuite']
+        if any(word in url_in.lower() for word in bad_words):
+            st.error("🚨 Cảnh báo: Link có dấu hiệu lừa đảo!")
+        else:
+            st.info("Chưa phát hiện dấu hiệu xấu. Hãy luôn cẩn thận.")
 
 elif menu == "🚨 Khẩn cấp":
-    st.title("🚨 Hướng dẫn xử lý nhanh")
-    st.info("Hãy gọi 113 hoặc bộ phận IT nếu bạn nghi ngờ bị tấn công hệ thống.")
+    st.title("🚨 Quy trình khẩn cấp")
+    st.markdown("""
+    ### Khi nghi ngờ bị hack:
+    1. **Ngắt mạng** (Tắt Wifi/4G).
+    2. **Đăng xuất** tất cả thiết bị từ xa.
+    3. **Thay đổi mật khẩu** email khôi phục.
+    4. **Liên hệ** phòng kỹ thuật: **0123.456.789**
+    """)
+    if st.button("GỌI HỖ TRỢ NGAY"):
+        st.balloons()
+        st.write("Đang kết nối với tổng đài viên...")
