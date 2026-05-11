@@ -112,13 +112,40 @@ elif menu == "Công cụ":
                 st.success("Chưa phát hiện dấu hiệu xấu trong danh sách đen.")
 
     with t3:
-        st.subheader("Quét mã QR")
-        cam_on = st.toggle("Mở Camera")
-        img = st.camera_input("Chụp mã QR cần kiểm tra", disabled=not cam_on)
-        if img: 
-            st.image(img, caption="Ảnh đã chụp", width=300)
-            st.info("Lưu ý: Hệ thống chỉ lưu ảnh tạm thời để bạn quan sát. Hãy cẩn thận với các mã QR lạ.")
+        st.subheader("📷 Trình quét mã QR an toàn")
+        from pyzbar.pyzbar import decode
+        from PIL import Image
+        import numpy as np
 
+        cam_on = st.toggle("Kích hoạt Camera")
+        img_file = st.camera_input("Đưa mã QR vào khung hình", disabled=not cam_on)
+        
+        if img_file:
+            # Chuyển đổi file ảnh sang định dạng PIL để xử lý
+            image = Image.open(img_file)
+            st.image(image, caption="Ảnh đã chụp", width=300)
+            
+            # Giải mã QR
+            decoded_objects = decode(image)
+            
+            if decoded_objects:
+                for obj in decoded_objects:
+                    qr_data = obj.data.decode("utf-8")
+                    st.success("✅ Đã tìm thấy dữ liệu trong mã QR!")
+                    
+                    # Hiển thị nội dung mã QR trong hộp code để dễ sao chép
+                    st.code(qr_data)
+                    
+                    # Kiểm tra nhanh xem nội dung có phải là link độc hại không
+                    blacklist = ["bit.ly", "tinyurl.com", "shopee", "lark", "naptien"]
+                    if any(word in qr_data.lower() for word in blacklist):
+                        st.error("🚨 CẢNH BÁO: Mã QR này chứa liên kết có dấu hiệu lừa đảo!")
+                    elif qr_data.startswith("http"):
+                        st.info("🔗 Đây là một đường link. Hãy kiểm tra kỹ trước khi truy cập.")
+                    else:
+                        st.info("📄 Nội dung là văn bản thuần túy.")
+            else:
+                st.warning("🔍 Không tìm thấy mã QR nào trong ảnh. Hãy thử chụp lại rõ nét hơn và đủ ánh sáng.")
 elif menu == "Khẩn cấp":
     st.header("🚨 Hỗ trợ khẩn cấp")
     st.markdown("""
