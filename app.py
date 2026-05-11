@@ -75,7 +75,7 @@ elif menu == "Các điều cấm":
 elif menu == "🛡️ Nguy cơ & Biện pháp":
     st.header("🛡️ Nhận diện Nguy cơ & Phòng ngừa")
     # Lấy dữ liệu từ tab Nguy cơ
-    df_risk = load_data(get_sheet_url(st.secrets["id_tab_nguyco"]))
+    df_risk = load_data(get_sheet_url(st.secrets["id_tab_Nguyco"]))
     
     if df_risk is not None:
         for _, row in df_risk.iterrows():
