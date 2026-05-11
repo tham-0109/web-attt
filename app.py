@@ -52,159 +52,63 @@ with st.sidebar:
         "🛠️ Công cụ", 
         "🚨 Khẩn cấp"
     ))
-# 4. XỬ LÝ CÁC MỤC
-if menu == "Bản tin":
-    st.header("📰 Tin tức An toàn mạng")
-    df = load_data(get_url("0"))
-    if df is not None:
-        for _, row in df.iterrows():
-            with st.expander(f"📌 {row['Ngày']} - {row['Tiêu đề']}"):
-                st.write(row['Nội dung'])
+# 4. XỬ LÝ NỘI DUNG
+if menu == "📰 Tin tức":
+    st.header("📰 Bản tin An toàn thông tin")
+    t1, t2 = st.tabs(["📌 Tin nội bộ", "🌐 Tin quốc tế"])
+    with t1:
+        df = load_data(get_sheet_url("0"))
+        if df is not None:
+            for _, row in df.iterrows():
+                with st.expander(f"📍 {row['Ngày']} - {row['Tiêu đề']}"):
+                    st.write(row['Nội dung'])
+    with t2:
+        feed = feedparser.parse("https://vnexpress.net/rss/so-hoa/bao-mat.rss")
+        if feed.entries:
+            for entry in feed.entries[:5]:
+                st.markdown(f"**[{entry.title}]({entry.link})**")
+                st.caption(f"📅 {entry.published}")
+                st.divider()
 
-elif menu == "Các điều cấm":
-    st.header("🚫 Hành vi bị nghiêm cấm")
-    df_dc = load_data(get_url(GID_DC))
+elif menu == "🚫 Các điều cấm":
+    st.header("🚫 Quy định nghiêm cấm")
+    df_dc = load_data(get_sheet_url(GID_DC))
     if df_dc is not None:
         for _, row in df_dc.iterrows():
             st.error(f"❌ {row['Danh mục']}")
             st.write(row['Chi tiết'])
             st.divider()
+
 elif menu == "🛡️ Nguy cơ & Biện pháp":
     st.header("🛡️ Nhận diện Nguy cơ & Phòng ngừa")
-    # Lấy dữ liệu từ tab Nguy cơ
-    df_risk = load_data(get_sheet_url(st.secrets["id_tab_Nguyco"]))
-    
+    df_risk = load_data(get_sheet_url(GID_NC))
     if df_risk is not None:
         for _, row in df_risk.iterrows():
-            with st.expander(f"⚠️ {row['Nguy cơ']}"):
+            with st.expander(f"⚠️ Nguy cơ: {row['Nguy cơ']}"):
                 st.info(f"**Biện pháp bảo đảm:**\n\n{row['Biện pháp bảo đảm']}")
-                if 'Mức độ rủi ro' in row:
-                    st.write(f"📊 Mức độ: {row['Mức độ rủi ro']}")
     else:
-        st.error("Chưa thể kết nối dữ liệu Nguy cơ. Hãy kiểm tra ID tab trong Secrets!")
+        st.error("Chưa thể kết nối dữ liệu Nguy cơ.")
 
-elif menu == "Công cụ":
+elif menu == "🛠️ Công cụ":
     st.header("🛠️ Trung tâm Công cụ")
-    
-    # Chia tab để giao diện di động gọn gàng
-    t1, t2, t3 = st.tabs(["🔐 Mật khẩu", "🔗 Kiểm tra Link", "📷 Quét QR"])
-
-    with t1:
-        st.subheader("Kiểm tra độ mạnh mật khẩu")
-        p = st.text_input("Nhập mật khẩu cần test:", type="password")
+    tab_pw, tab_link, tab_qr = st.tabs(["🔐 Mật khẩu", "🔗 Kiểm tra Link", "📷 Quét QR"])
+    with tab_pw:
+        p = st.text_input("Kiểm tra mật khẩu:", type="password")
         if p:
-            score = 0
-            checks = {
-                "Độ dài ≥ 8 ký tự": len(p) >= 8,
-                "Có chữ hoa & chữ thường": any(c.isupper() for c in p) and any(c.islower() for c in p),
-                "Có chữ số": any(c.isdigit() for c in p),
-                "Có ký tự đặc biệt": bool(re.search(r"[!@#$%^&*(),.?\":{}|<>]", p))
-            }
-            for label, status in checks.items():
-                if status: 
-                    st.write(f"✅ {label}")
-                    score += 1
-                else: st.write(f"❌ {label}")
-            
-            if score == 4: st.success("Mật khẩu rất mạnh!")
-            elif score >= 2: st.warning("Mật khẩu trung bình.")
-            else: st.error("Mật khẩu yếu!")
-
-        st.divider()
-        st.subheader("Tạo mật khẩu an toàn")
-        if st.button("Tạo mật khẩu ngẫu nhiên"):
-            chars = string.ascii_letters + string.digits + "!@#$%^&*"
-            new_pw = ''.join(random.choice(chars) for i in range(12))
-            st.code(new_pw)
-            st.caption("Bấm vào để sao chép")
-
-    with t2:
-        st.subheader("Quét liên kết lừa đảo")
-        url_input = st.text_input("Dán link nghi vấn vào đây:")
-        if url_input:
-            blacklist = ["bit.ly", "tinyurl.com", "shopee-vouchers", "nhantien", "qua-tang"]
-            if any(word in url_input.lower() for word in blacklist):
-                st.error("🚨 CẢNH BÁO: Link này có dấu hiệu lừa đảo hoặc rút gọn không an toàn!")
-            else:
-                st.success("Chưa phát hiện dấu hiệu xấu trong danh sách đen.")
-
-    with t3:
-        st.subheader("📷 Trình quét mã QR an toàn")
+            score = sum([len(p)>=8, any(c.isupper() for c in p), any(c.isdigit() for c in p)])
+            if score == 3: st.success("Mật khẩu mạnh")
+            else: st.warning("Mật khẩu yếu")
+    with tab_qr:
         from pyzbar.pyzbar import decode
-        from PIL import Image
-        import numpy as np
+        img = st.camera_input("Quét mã QR")
+        if img:
+            res = decode(Image.open(img))
+            if res: st.code(res[0].data.decode("utf-8"))
+            else: st.warning("Không tìm thấy mã.")
 
-        cam_on = st.toggle("Kích hoạt Camera")
-        img_file = st.camera_input("Đưa mã QR vào khung hình", disabled=not cam_on)
-        
-        if img_file:
-            # Chuyển đổi file ảnh sang định dạng PIL để xử lý
-            image = Image.open(img_file)
-            st.image(image, caption="Ảnh đã chụp", width=300)
-            
-            # Giải mã QR
-            decoded_objects = decode(image)
-            
-            if decoded_objects:
-                for obj in decoded_objects:
-                    qr_data = obj.data.decode("utf-8")
-                    st.success("✅ Đã tìm thấy dữ liệu trong mã QR!")
-                    
-                    # Hiển thị nội dung mã QR trong hộp code để dễ sao chép
-                    st.code(qr_data)
-                    
-                    # Kiểm tra nhanh xem nội dung có phải là link độc hại không
-                    blacklist = ["bit.ly", "tinyurl.com", "shopee", "lark", "naptien"]
-                    if any(word in qr_data.lower() for word in blacklist):
-                        st.error("🚨 CẢNH BÁO: Mã QR này chứa liên kết có dấu hiệu lừa đảo!")
-                    elif qr_data.startswith("http"):
-                        st.info("🔗 Đây là một đường link. Hãy kiểm tra kỹ trước khi truy cập.")
-                    else:
-                        st.info("📄 Nội dung là văn bản thuần túy.")
-            else:
-                st.warning("🔍 Không tìm thấy mã QR nào trong ảnh. Hãy thử chụp lại rõ nét hơn và đủ ánh sáng.")
-elif menu == "Khẩn cấp":
-    st.title("🚨 Trung tâm Phản ứng Sự cố")
-    st.error("Hãy giữ bình tĩnh và thực hiện theo các bước dưới đây.")
-
-    # 1. Các tình huống cụ thể
-    tinh_huong = st.selectbox(
-        "Chọn tình huống bạn đang gặp phải:",
-        ["-- Chọn tình huống --", "Nghi ngờ bị hack/theo dõi", "Mất thiết bị (Điện thoại/Laptop)", "Lộ mật khẩu/Thông tin tài khoản"]
-    )
-
-    if tinh_huong == "Nghi ngờ bị hack/theo dõi":
-        st.warning("⚡ **HÀNH ĐỘNG NGAY:**")
-        st.checkbox("1. Ngắt kết nối Wifi/4G ngay lập tức.")
-        st.checkbox("2. Đăng xuất tài khoản khỏi tất cả các thiết bị khác.")
-        st.checkbox("3. Sử dụng một thiết bị sạch khác để đổi mật khẩu.")
-        
-    elif tinh_huong == "Mất thiết bị (Điện thoại/Laptop)":
-        st.warning("⚡ **HÀNH ĐỘNG NGAY:**")
-        st.checkbox("1. Sử dụng tính năng 'Find My' hoặc 'Find My Device' để khóa/xóa dữ liệu từ xa.")
-        st.checkbox("2. Liên hệ nhà mạng để khóa SIM.")
-        st.checkbox("3. Thay đổi mật khẩu các ứng dụng ngân hàng, email.")
-
-    elif tinh_huong == "Lộ mật khẩu/Thông tin tài khoản":
-        st.warning("⚡ **HÀNH ĐỘNG NGAY:**")
-        st.checkbox("1. Thay đổi mật khẩu ngay lập tức (sử dụng mật khẩu mạnh).")
-        st.checkbox("2. Kích hoạt xác thực 2 lớp (2FA) nếu chưa có.")
-        st.checkbox("3. Kiểm tra lịch sử đăng nhập để tìm hoạt động lạ.")
-
-    st.divider()
-
-    # 2. Hotline hỗ trợ (Dùng markdown để tạo link gọi điện trực tiếp)
-    st.subheader("📞 Liên hệ hỗ trợ kỹ thuật. Tel:0378756992")
-   
-    # 3. Gửi báo cáo nhanh
-    st.divider()
-    st.subheader("📩 Gửi báo cáo nhanh cho Admin")
-    msg = st.text_area("Mô tả ngắn gọn sự cố (Ví dụ: Không đăng nhập được Email...)")
-    if st.button("GỬI BÁO CÁO"):
-        if msg:
-            st.toast("Đang gửi báo cáo...")
-            # Ở đây có thể tích hợp gửi Telegram hoặc Email nếu muốn nâng cấp sau này
-            st.success("Báo cáo của bạn đã được gửi. Đội kỹ thuật sẽ liên hệ lại ngay!")
-            st.balloons()
-        else:
-            st.warning("Vui lòng nhập mô tả sự cố.")
+elif menu == "🚨 Khẩn cấp":
+    st.header("🚨 Phản ứng Sự cố")
+    st.warning("⚡ HÀNH ĐỘNG NGAY:")
+    st.checkbox("Ngắt kết nối Internet thiết bị")
+    st.checkbox("Thông báo cho quản trị viên")
+    st.markdown('[📞 GỌI HOTLINE HỖ TRỢ](tel:0901234567)', unsafe_allow_html=True))
