@@ -33,7 +33,7 @@ def load_data(url):
 
 # --- HÀNH LANG BẢO MẬT ---
 # Thay vì viết ID và Mật khẩu trực tiếp, hãy dùng dòng này:
-GOOGLE_SHEET_ID = st.secrets["1ppqrGTWXqRDNx2FVxNnMaPrLVan39hrb_9hXJ7oJ98M"]
+GOOGLE_SHEET_ID = st.secrets["/1ppqrGTWXqRDNx2FVxNnMaPrLVan39hrb_9hXJ7oJ98M/"]
 GID_DIEUCAM = st.secrets["1866776495"]
 XAC_THUC = st.secrets["123456"]
 
