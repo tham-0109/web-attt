@@ -3,35 +3,32 @@ import pandas as pd
 import re
 import string
 import random
+import feedparser
+from PIL import Image
 
 # 1. CẤU HÌNH TRANG
-st.set_page_config(page_title="Sổ tay An toàn thông tin", page_icon="🛡️", layout="centered")
+st.set_page_config(page_title="Sổ tay ATTT", page_icon="🛡️", layout="centered")
 
-# CSS để tối ưu giao diện di động
+# CSS tối ưu di động
 st.markdown("""
     <style>
     .stButton>button { width: 100%; border-radius: 10px; height: 3.5em; background-color: #0d6efd; color: white; }
     .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] { 
-        height: 50px; white-space: pre-wrap; background-color: #f0f2f6; 
-        border-radius: 5px; padding: 10px;
-    }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. GỌI DỮ LIỆU TỪ KÉT SẮT (SECRETS)
+# 2. KẾT NỐI DỮ LIỆU (SECRETS)
 try:
-    SHEET_ID = st.secrets["id_google_sheet"]
+    ID_SHEET = st.secrets["id_google_sheet"]
     GID_DC = st.secrets["id_tab_dieucam"]
-    GID_NC = st.secrets["id_tab_Nguyco"]
-    MAT_KHAU_HE_THONG = st.secrets["password_hethong"]
+    GID_NC = st.secrets["id_tab_nguyco"]
+    XAC_THUC = st.secrets["password_hethong"]
 except Exception as e:
     st.error(f"Lỗi cấu hình Secrets: {e}")
     st.stop()
 
-# Hàm lấy link CSV
-def get_url(gid):
-    return f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={gid}"
+def get_sheet_url(gid):
+    return f"https://docs.google.com/spreadsheets/d/{ID_SHEET}/export?format=csv&gid={gid}"
 
 @st.cache_data(ttl=60)
 def load_data(url):
@@ -55,7 +52,6 @@ with st.sidebar:
         "🛠️ Công cụ", 
         "🚨 Khẩn cấp"
     ))
-
 # 4. XỬ LÝ CÁC MỤC
 if menu == "Bản tin":
     st.header("📰 Tin tức An toàn mạng")
