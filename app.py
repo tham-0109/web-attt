@@ -46,7 +46,7 @@ with st.sidebar:
         st.stop()
     
     st.success("Xác thực thành công!")
-    menu = st.radio("MENU CHÍNH", ("Bản tin", "Các điều cấm", "Công cụ", "Khẩn cấp"))
+   menu = st.radio("DANH MỤC", ("📰 Tin tức", "🚫 Các điều cấm", "🛡️ Nguy cơ & Biện pháp", "🛠️ Công cụ", "🚨 Khẩn cấp"))
 
 # 4. XỬ LÝ CÁC MỤC
 if menu == "Bản tin":
@@ -65,6 +65,19 @@ elif menu == "Các điều cấm":
             st.error(f"❌ {row['Danh mục']}")
             st.write(row['Chi tiết'])
             st.divider()
+elif menu == "🛡️ Nguy cơ & Biện pháp":
+    st.header("🛡️ Nhận diện Nguy cơ & Phòng ngừa")
+    # Lấy dữ liệu từ tab Nguy cơ
+    df_risk = load_data(get_sheet_url(st.secrets["id_tab_nguyco"]))
+    
+    if df_risk is not None:
+        for _, row in df_risk.iterrows():
+            with st.expander(f"⚠️ {row['Nguy cơ']}"):
+                st.info(f"**Biện pháp bảo đảm:**\n\n{row['Biện pháp bảo đảm']}")
+                if 'Mức độ rủi ro' in row:
+                    st.write(f"📊 Mức độ: {row['Mức độ rủi ro']}")
+    else:
+        st.error("Chưa thể kết nối dữ liệu Nguy cơ. Hãy kiểm tra ID tab trong Secrets!")
 
 elif menu == "Công cụ":
     st.header("🛠️ Trung tâm Công cụ")
