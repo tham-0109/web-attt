@@ -32,10 +32,10 @@ def load_data(url):
         return None
 
 # --- HÀNH LANG BẢO MẬT ---
-# Thay vì viết ID và Mật khẩu trực tiếp, hãy dùng dòng này:
-GOOGLE_SHEET_ID = st.secrets["/1ppqrGTWXqRDNx2FVxNnMaPrLVan39hrb_9hXJ7oJ98M/"]
-GID_DIEUCAM = st.secrets["1866776495"]
-XAC_THUC = st.secrets["123456"]
+# Chúng ta gọi bằng "Tên biến" đã đặt trong Secrets, không phải dán ID trực tiếp vào đây
+GOOGLE_SHEET_ID = st.secrets["id_google_sheet"]
+GID_DIEUCAM = st.secrets["id_tab_dieucam"]
+XAC_THUC = st.secrets["password_hethong"]
 
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/shield.png", width=60)
