@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re
+import feedparser
 
 # --- CẤU HÌNH GIAO DIỆN ---
 st.set_page_config(page_title="Hệ thống ATTT Mobile", page_icon="🛡️", layout="centered")
@@ -52,6 +53,35 @@ with st.sidebar:
     )
 
 # --- XỬ LÝ NỘI DUNG ---
+if menu == "Bản tin":
+    st.header("📰 Bản tin An toàn mạng")
+    
+    # Tạo tab để phân loại nguồn tin
+    tab_manual, tab_auto = st.tabs(["📌 Tin nội bộ", "🌐 Tin quốc tế/Hệ thống"])
+    
+    with tab_manual:
+        st.subheader("Dữ liệu từ Google Sheets")
+        df = load_data(get_url("0"))
+        if df is not None:
+            for _, row in df.iterrows():
+                with st.expander(f"📌 {row['Ngày']} - {row['Tiêu đề']}"):
+                    st.write(row['Nội dung'])
+
+    with tab_auto:
+        st.subheader("Tin tức tự động từ VnExpress")
+        # Đường dẫn RSS của VnExpress mục Bảo mật
+        rss_url = "https://vnexpress.net/rss/so-hoa/bao-mat.rss"
+        feed = feedparser.parse(rss_url)
+        
+        if feed.entries:
+            for entry in feed.entries[:5]: # Lấy 5 tin mới nhất
+                with st.container():
+                    st.markdown(f"**[{entry.title}]({entry.link})**")
+                    st.caption(f"Ngày đăng: {entry.published}")
+                    st.write(entry.summary.split("<br>")[0]) # Lấy phần tóm tắt ngắn
+                    st.divider()
+        else:
+            st.warning("Không thể kết nối lấy tin tự động.")
 
 if menu == "📰 Tin tức mới":
     st.title("📰 Bản tin An toàn thông tin")
