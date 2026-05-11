@@ -7,7 +7,7 @@ st.set_page_config(page_title="Hệ thống ATTT Mobile", page_icon="🛡️")
 
 # --- KẾT NỐI DỮ LIỆU GOOGLE SHEETS ---
 # THAY LINK DƯỚI ĐÂY BẰNG LINK CỦA BẠN (đã đổi đuôi thành /export?format=csv)
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1ppqrGTWXqRDNx2FVxNnMaPrLVan39hrb_9hXJ7oJ98M//export?format=csv"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1ppqrGTWXqRDNx2FVxNnMaPrLVan39hrb_9hXJ7oJ98M/export?format=csv"
 
 def load_data():
     try:
