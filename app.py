@@ -61,7 +61,7 @@ if pw != XAC_THUC:
     # Căn giữa logo bằng cột
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("https://cdn-icons-png.flaticon.com/512/2438/2438133.png", use_container_width=True)
+        st.image("https://cdn-icons-png.flaticon.com/512/2092/2092663.png", use_container_width=True)
     
     st.markdown("<h1 class='main-title'>SỔ TAY ATTT</h1>", unsafe_allow_html=True)
     st.markdown("<p class='sub-title'>Hệ thống tra cứu an toàn thông tin nội bộ</p>", unsafe_allow_html=True)
