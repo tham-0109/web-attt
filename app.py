@@ -35,24 +35,48 @@ def load_data(url):
     try: return pd.read_csv(url)
     except: return None
 
-# 3. GIAO DIỆN BẢO MẬT (SIDEBAR)
+3. GIAO DIỆN BẢO MẬT (SIDEBAR)
 with st.sidebar:
     st.title("🛡️ SỔ TAY ATTT")
     pw = st.text_input("Mật khẩu truy cập:", type="password")
-    if pw != XAC_THUC:
-        st.warning("Vui lòng nhập mật khẩu.")
-        st.stop()
     
-    st.success("Đã mở khóa")
-    menu = st.radio("DANH MỤC", (
-        "📰 Tin tức", 
-        "🚫 Các điều cấm", 
-        "🛡️ Nguy cơ & Biện pháp", 
-        "🛠️ Công cụ", 
-        "🚨 Khẩn cấp"
-    ))
+    # Nếu mật khẩu sai hoặc chưa nhập
+    if pw != XAC_THUC:
+        st.warning("Vui lòng nhập mật khẩu chính xác để mở khóa tài liệu.")
+        # Dừng xử lý các menu bên dưới
+        menu = None 
+    else:
+        st.success("Đã mở khóa hệ thống")
+        menu = st.radio("DANH MỤC", (
+            "📰 Tin tức", 
+            "🚫 Các điều cấm", 
+            "🛡️ Nguy cơ & Biện pháp", 
+            "🛠️ Công cụ", 
+            "🚨 Khẩn cấp"
+        ))
 
-# 4. XỬ LÝ NỘI DUNG
+# 4. XỬ LÝ NỘI DUNG CHÍNH
+if pw != XAC_THUC:
+    # MÀN HÌNH CHÀO KHI CHƯA ĐĂNG NHẬP
+    st.markdown("<br><br>", unsafe_allow_html=True) # Tạo khoảng trống
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        # Bạn có thể thay link ảnh logo của đơn vị bạn vào đây
+        st.image("https://cdn-icons-png.flaticon.com/512/1067/1067357.png", width=150)
+    
+    st.markdown("<h1 style='text-align: center;'>SỔ TAY AN TOÀN THÔNG TIN</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray;'>Hệ thống tra cứu quy định và tin tức bảo mật nội bộ</p>", unsafe_allow_html=True)
+    
+    st.info("👈 **HƯỚNG DẪN:** Vui lòng nhập mật khẩu ở thanh Menu bên trái (hoặc nhấn vào dấu mũi tên góc trên cùng bên trái trên điện thoại) để xem nội dung.")
+    
+    st.divider()
+    st.caption("© 2026 Bản quyền thuộc về Đội ngũ Kỹ thuật ATTT")
+
+# Nếu đã có mật khẩu thì mới hiện các nội dung menu
+elif menu == "📰 Tin tức":
+    # (Giữ nguyên đoạn code tin tức cũ của bạn tại đây)
+    st.header("📰 Bản tin An toàn thông tin")
+
 if menu == "📰 Tin tức":
     st.header("📰 Bản tin An toàn thông tin")
     t1, t2 = st.tabs(["📌 Tin nội bộ", "🌐 Tin quốc tế"])
@@ -115,4 +139,4 @@ elif menu == "🚨 Khẩn cấp":
     st.checkbox("1. Ngắt kết nối Internet thiết bị.")
     st.checkbox("2. Thông báo ngay cho quản trị viên kỹ thuật.")
     # Sửa lỗi Syntax tại đây bằng cách bọc markdown chuẩn
-    st.markdown("[📞 GỌI HOTLINE HỖ TRỢ](tel:0901234567)", unsafe_allow_html=True)
+    st.markdown("[📞 GỌI HOTLINE HỖ TRỢ](tel:0378765992)", unsafe_allow_html=True)
