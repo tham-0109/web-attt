@@ -70,10 +70,6 @@ if pw != XAC_THUC:
     st.divider()
     st.caption("© 2026 Bản quyền thuộc về Đội ngũ Kỹ thuật")
 
-# Nếu đã có mật khẩu thì mới hiện các nội dung menu
-elif menu == "📰 Tin tức":
-    # (Giữ nguyên đoạn code tin tức cũ của bạn tại đây)
-    st.header("📰 Bản tin An toàn thông tin")
 
 if menu == "📰 Tin tức":
     st.header("📰 Bản tin An toàn thông tin")
