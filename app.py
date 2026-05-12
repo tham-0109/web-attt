@@ -108,24 +108,83 @@ elif menu == "🛡️ Nguy cơ & Biện pháp":
         st.error("Chưa thể kết nối dữ liệu Nguy cơ.")
 
 elif menu == "🛠️ Công cụ":
-    st.header("🛠️ Trung tâm Công cụ")
-    tab_pw, tab_link, tab_qr = st.tabs(["🔐 Mật khẩu", "🔗 Kiểm tra Link", "📷 Quét QR"])
+    st.header("🛠️ Trung tâm Công cụ Bảo mật")
+    tab_pw, tab_link, tab_qr = st.tabs(["🔐 Mật khẩu", "🔗 Kiểm tra Link", "📷 Quét mã QR"])
+
+    # --- TAB 1: KIỂM TRA & TẠO MẬT KHẨU ---
     with tab_pw:
-        p = st.text_input("Kiểm tra mật khẩu:", type="password")
+        st.subheader("Kiểm tra độ mạnh mật khẩu")
+        p = st.text_input("Nhập mật khẩu cần kiểm tra:", type="password")
         if p:
-            score = sum([len(p)>=8, any(c.isupper() for c in p), any(c.isdigit() for c in p)])
-            if score == 3: st.success("Mật khẩu mạnh")
-            else: st.warning("Mật khẩu cần cải thiện")
+            # Thuật toán tính điểm
+            score = 0
+            if len(p) >= 8: score += 1
+            if any(c.isupper() for c in p): score += 1
+            if any(c.isdigit() for c in p): score += 1
+            if any(c in string.punctuation for c in p): score += 1
+            
+            if score == 4: st.success("🔥 Mật khẩu rất mạnh! An toàn tuyệt đối.")
+            elif score == 3: st.warning("⚠️ Mật khẩu khá, nên thêm ký tự đặc biệt.")
+            else: st.error("🚨 Mật khẩu quá yếu! Dễ bị tấn công bẻ khóa.")
+        
+        st.divider()
+        if st.button("Tạo mật khẩu ngẫu nhiên (12 ký tự)"):
+            chars = string.ascii_letters + string.digits + "!@#$%^&*"
+            new_pw = ''.join(random.choice(chars) for _ in range(12))
+            st.info("Mật khẩu mới của bạn:")
+            st.code(new_pw)
+
+    # --- TAB 2: KIỂM TRA LINK (Sửa lỗi trống) ---
+    with tab_link:
+        st.subheader("Phân tích liên kết nghi vấn")
+        url_in = st.text_input("Dán link cần kiểm tra:", placeholder="https://example.com...")
+        
+        if url_in:
+            url_check = url_in.lower().strip()
+            # Danh sách đen nhận diện nhanh
+            blacklist = ["bit.ly", "tinyurl", "shopee", "larksuite", "naptien", "bom.so"]
+            
+            if any(word in url_check for word in blacklist):
+                st.error("🚨 **NGUY HIỂM:** Link này chứa dấu hiệu lừa đảo hoặc rút gọn không an toàn!")
+            elif not url_check.startswith("https://"):
+                st.warning("⚠️ **RỦI RO:** Link không có HTTPS, dữ liệu có thể bị đánh cắp.")
+            else:
+                st.success("✅ **AN TOÀN:** Chưa phát hiện dấu hiệu bất thường.")
+            
+            # Hiển thị phân tích tên miền
+            try:
+                domain = url_check.split('//')[-1].split('/')[0]
+                st.info(f"🔍 Tên miền gốc: **{domain}**")
+            except:
+                pass
+        else:
+            st.caption("Nhập địa chỉ web để hệ thống bắt đầu quét.")
+
+    # --- TAB 3: QUÉT MÃ QR (Yêu cầu packages.txt) ---
     with tab_qr:
+        st.subheader("Trình quét mã QR an toàn")
         from pyzbar.pyzbar import decode
-        img = st.camera_input("Quét mã QR")
-        if img:
-            res = decode(Image.open(img))
-            if res:
-                content = res[0].data.decode("utf-8")
-                st.success("Nội dung mã QR:")
-                st.code(content)
-            else: st.warning("Không tìm thấy mã.")
+        
+        cam_on = st.toggle("Mở Camera")
+        img_file = st.camera_input("Đưa mã QR vào khung hình", disabled=not cam_on)
+        
+        if img_file:
+            # Giải mã
+            image = Image.open(img_file)
+            decoded_objects = decode(image)
+            
+            if decoded_objects:
+                for obj in decoded_objects:
+                    qr_data = obj.data.decode("utf-8")
+                    st.success("✅ Đã tìm thấy nội dung:")
+                    st.code(qr_data)
+                    
+                    # Tự động kiểm tra nếu nội dung QR là link
+                    if qr_data.startswith("http"):
+                        if any(w in qr_data.lower() for w in ["bit.ly", "tinyurl", "lark"]):
+                            st.error("🚨 Cảnh báo: Link trong QR có dấu hiệu lừa đảo!")
+            else:
+                st.warning("🔍 Không tìm thấy mã QR. Hãy thử chụp lại rõ nét hơn.")
 
 elif menu == "🚨 Khẩn cấp":
     st.header("🚨 Phản ứng Sự cố")
