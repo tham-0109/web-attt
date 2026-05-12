@@ -99,13 +99,29 @@ elif menu == "🚫 Các điều cấm":
 
 elif menu == "🛡️ Nguy cơ & Biện pháp":
     st.header("🛡️ Nhận diện Nguy cơ & Phòng ngừa")
+    st.markdown("---")
+    
+    # Tải dữ liệu từ Google Sheets
     df_risk = load_data(get_sheet_url(GID_NC))
+    
     if df_risk is not None:
         for _, row in df_risk.iterrows():
-            with st.expander(f"⚠️ {row['Nguy cơ']}"):
-                st.info(f"**Biện pháp bảo đảm:**\n\n{row['Biện pháp bảo đảm']}")
+            # Xác định icon dựa trên mức độ
+            icon = "🚨" if "Nguy hiểm" in str(row['Mức độ']) else "⚠️"
+            
+            # Hiển thị dạng hộp Expander
+            with st.expander(f"{icon} {row['Nguy cơ']}"):
+                # Trình bày nội dung biện pháp
+                st.markdown("#### **Biện pháp bảo đảm:**")
+                st.info(row['Biện pháp bảo đảm'])
+                
+                # Hiển thị mức độ bằng màu sắc
+                if "Nguy hiểm" in str(row['Mức độ']):
+                    st.error(f"Đánh giá rủi ro: {row['Mức độ']}")
+                else:
+                    st.warning(f"Đánh giá rủi ro: {row['Mức độ']}")
     else:
-        st.error("Chưa thể kết nối dữ liệu Nguy cơ.")
+        st.error("Không thể tải dữ liệu. Vui lòng kiểm tra tab Nguy cơ trong Sheets!")
 
 elif menu == "🛠️ Công cụ":
     st.header("🛠️ Trung tâm Công cụ Bảo mật")
