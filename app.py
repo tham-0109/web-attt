@@ -56,7 +56,7 @@ with st.sidebar:
         ))
 
 # 4. XỬ LÝ NỘI DUNG CHÍNH
-if pw != MAT_KHAU_HE_THONG:
+if pw != XAC_THUC:
     st.markdown("<br><br>", unsafe_allow_html=True)
     # Căn giữa logo bằng cột
     col1, col2, col3 = st.columns([1, 2, 1])
