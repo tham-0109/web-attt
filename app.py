@@ -56,22 +56,19 @@ with st.sidebar:
         ))
 
 # 4. XỬ LÝ NỘI DUNG CHÍNH
-if pw != password_hethong:
-    # 1. CĂN GIỮA LOGO BẰNG COLUMNS
-    st.markdown("<br><br>", unsafe_allow_html=True) # Tạo khoảng trống trên cùng
-    col1, col2, col3 = st.columns([1, 2, 1]) # Chia màn hình thành 3 phần, phần giữa rộng gấp đôi
-    
+if pw != MAT_KHAU_HE_THONG:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    # Căn giữa logo bằng cột
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # Thay link logo Khiên bảo mật vào đây và căn giữa ảnh
-        st.image("https://cdn-icons-png.flaticon.com/512/1067/1067357.png", width=150)
+        st.image("https://cdn-icons-png.flaticon.com/512/1067/1067357.png", use_container_width=True)
     
-    # 2. CĂN GIỮA CHỮ BẰNG HTML CSS
-    st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>SỔ TAY ATTT MOBILE</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: gray;'>Hệ thống tra cứu quy định và tin tức bảo mật nội bộ</p>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>SỔ TAY ATTT</h1>", unsafe_allow_html=True)
+    st.markdown("<p class='sub-title'>Hệ thống tra cứu an toàn thông tin nội bộ</p>", unsafe_allow_html=True)
     
+    st.info("👈 **HƯỚNG DẪN:** Nhấn vào dấu **>** (hoặc Menu) ở góc trái bên trên và nhập mật khẩu để bắt đầu.")
     st.divider()
-    st.info("👈 **HƯỚNG DẪN:** Vui lòng nhập mật khẩu ở thanh Menu bên trái (hoặc nhấn vào dấu mũi tên góc trên cùng bên trái trên điện thoại) để xem nội dung.")
-    st.caption("<p style='text-align: center;'>Bản quyền © 2026 - Đội ngũ ATTT</p>", unsafe_allow_html=True)
+    st.caption("© 2026 Bản quyền thuộc về Đội ngũ Kỹ thuật")
 
 # Nếu đã có mật khẩu thì mới hiện các nội dung menu
 elif menu == "📰 Tin tức":
