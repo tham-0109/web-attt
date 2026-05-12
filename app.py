@@ -56,7 +56,7 @@ with st.sidebar:
         ))
 
 # 4. XỬ LÝ NỘI DUNG CHÍNH
-if pw != MAT_KHAU_HE_THONG:
+if pw != password_hethong:
     # 1. CĂN GIỮA LOGO BẰNG COLUMNS
     st.markdown("<br><br>", unsafe_allow_html=True) # Tạo khoảng trống trên cùng
     col1, col2, col3 = st.columns([1, 2, 1]) # Chia màn hình thành 3 phần, phần giữa rộng gấp đôi
