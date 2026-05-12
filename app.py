@@ -35,7 +35,7 @@ def load_data(url):
     try: return pd.read_csv(url)
     except: return None
 
-3. GIAO DIỆN BẢO MẬT (SIDEBAR)
+#3. GIAO DIỆN BẢO MẬT (SIDEBAR)
 with st.sidebar:
     st.title("🛡️ SỔ TAY ATTT")
     pw = st.text_input("Mật khẩu truy cập:", type="password")
