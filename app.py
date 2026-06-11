@@ -1,211 +1,244 @@
 import streamlit as st
 import pandas as pd
-import re
-import string
-import random
 import feedparser
+from pyzbar.pyzbar import decode
 from PIL import Image
+import secrets
+import string
+import bcrypt
+import time
 
-# 1. CẤU HÌNH TRANG
-st.set_page_config(page_title="Sổ tay ATTT", page_icon="🛡️", layout="centered")
 
-# CSS tối ưu di động
+st.set_page_config(
+    page_title="Sổ tay ATTT",
+    page_icon="🛡️",
+    layout="centered"
+)
+
 st.markdown("""
     <style>
-    .stButton>button { width: 100%; border-radius: 10px; height: 3.5em; background-color: #0d6efd; color: white; }
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+    .stButton>button {
+        width: 100%;
+        border-radius: 10px;
+    }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# 2. KẾT NỐI DỮ LIỆU (SECRETS)
+# Session state initialization
+if 'authenticated' not in st.session_state:
+    st.session_state['authenticated'] = False
+if 'login_attempts' not in st.session_state:
+    st.session_state['login_attempts'] = 0
+if 'last_activity' not in st.session_state:
+    st.session_state['last_activity'] = time.time()
+if 'locked_until' not in st.session_state:
+    st.session_state['locked_until'] = 0
+
+# Session timeout (15 minutes = 900 seconds)
+SESSION_TIMEOUT = 900
+
+# Check session timeout
+if st.session_state['authenticated']:
+    current_time = time.time()
+    if current_time - st.session_state['last_activity'] > SESSION_TIMEOUT:
+        st.session_state['authenticated'] = False
+        st.warning("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.")
+        st.rerun()
+    else:
+        st.session_state['last_activity'] = current_time
+
 try:
-    ID_SHEET = st.secrets["id_google_sheet"]
+    ID_SHEET_TIN_TUC = st.secrets["id_google_sheet"]
+    ID_SHEET_DC_NC = st.secrets["id_sheet_dieucam_nguyco"]
     GID_DC = st.secrets["id_tab_dieucam"]
-    GID_NC = st.secrets["id_tab_Nguyco"]
-    XAC_THUC = st.secrets["password_hethong"]
+    GID_NC = st.secrets["id_tab_nguyco"]
+    MAT_KHAU_HASH = st.secrets["password_hash"].encode('utf-8')
 except Exception as e:
-    st.error(f"Lỗi cấu hình Secrets: {e}")
+    st.error("Vui lòng cấu hình các secrets trong Streamlit!")
     st.stop()
 
-def get_sheet_url(gid):
-    return f"https://docs.google.com/spreadsheets/d/{ID_SHEET}/export?format=csv&gid={gid}"
+
+def get_sheet_url(sheet_id, gid):
+    return f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
+
 
 @st.cache_data(ttl=60)
 def load_data(url):
-    try: return pd.read_csv(url)
-    except: return None
+    return pd.read_csv(url)
 
-#3. GIAO DIỆN BẢO MẬT (SIDEBAR)
-with st.sidebar:
-    st.title("🛡️ SỔ TAY ATTT")
-    pw = st.text_input("Mật khẩu truy cập:", type="password")
+
+st.sidebar.title("🔐 Xác thực")
+
+# Check if account is locked
+current_time = time.time()
+if st.session_state['locked_until'] > current_time:
+    remaining = int(st.session_state['locked_until'] - current_time)
+    st.sidebar.error(f"Tài khoản bị khóa. Thử lại sau {remaining} giây.")
+else:
+    password = st.sidebar.text_input("Nhập mật khẩu", type="password", key="password_input")
     
-    # Nếu mật khẩu sai hoặc chưa nhập
-    if pw != XAC_THUC:
-        st.warning("Vui lòng nhập mật khẩu chính xác để mở khóa tài liệu.")
-        # Dừng xử lý các menu bên dưới
-        menu = None 
-    else:
-        st.success("Đã mở khóa hệ thống")
-        menu = st.radio("DANH MỤC", (
-            "📰 Tin tức", 
-            "🚫 Các điều cấm", 
-            "🛡️ Nguy cơ & Biện pháp", 
-            "🛠️ Công cụ", 
-            "🚨 Khẩn cấp"
-        ))
+    if password:
+        if bcrypt.checkpw(password.encode('utf-8'), MAT_KHAU_HASH):
+            st.session_state['authenticated'] = True
+            st.session_state['login_attempts'] = 0
+            st.session_state['last_activity'] = time.time()
+            st.sidebar.success("Xác thực thành công!")
+        else:
+            st.session_state['login_attempts'] += 1
+            if st.session_state['login_attempts'] >= 5:
+                st.session_state['locked_until'] = time.time() + 120
+                st.sidebar.error("Quá nhiều lần thử sai. Tài khoản bị khóa 2 phút!")
+            else:
+                st.sidebar.error(f"Mật khẩu không đúng! Còn {5 - st.session_state['login_attempts']} lần thử.")
 
-# 4. XỬ LÝ NỘI DUNG CHÍNH
-if pw != XAC_THUC:
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    # Căn giữa logo bằng cột
+menu = None
+if st.session_state['authenticated']:
+    menu = st.sidebar.radio(
+        "Danh mục",
+        ["📰 Tin tức", "🚫 Các điều cấm", "🛡️ Nguy cơ & Biện pháp", "🛠️ Công cụ", "🚨 Khẩn cấp"]
+    )
+    if st.sidebar.button("🚪 Đăng xuất"):
+        st.session_state['authenticated'] = False
+        st.rerun()
+
+if not st.session_state['authenticated']:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image("https://cdn-icons-png.flaticon.com/512/2092/2092663.png", use_container_width=True)
-    
-    st.markdown("<h1 class='main-title'>SỔ TAY ATTT</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='sub-title'>Hệ thống tra cứu an toàn thông tin nội bộ</p>", unsafe_allow_html=True)
-    
-    st.info("👈 **HƯỚNG DẪN:** Nhấn vào dấu **>** (hoặc Menu) ở góc trái bên trên và nhập mật khẩu để bắt đầu.")
-    st.divider()
-    st.caption("© 2026 Bản quyền thuộc về Đội ngũ Kỹ thuật")
+        st.image("https://cdn-icons-png.flaticon.com/512/1067/1067357.png", width=150)
+    st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>SỔ TAY ATTT</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray;'>Hệ thống tra cứu an toàn thông tin nội bộ</p>", unsafe_allow_html=True)
+    st.info("👈 HƯỚNG DẪN: Nhấn vào dấu Menu hoặc mũi tên ở góc trái bên trên điện thoại và nhập mật khẩu để bắt đầu.")
 
+else:
+    if menu == "📰 Tin tức":
+        tab1, tab2 = st.tabs(["📌 Tin nội bộ", "🌐 Tin quốc tế"])
+        with tab1:
+            st.header("📌 Tin nội bộ")
+            with st.spinner("Đang tải dữ liệu..."):
+                try:
+                    df_tin_noi_bo = load_data(get_sheet_url(ID_SHEET_TIN_TUC, "0"))
+                    for i, row in df_tin_noi_bo.iterrows():
+                        with st.expander(f"📄 {row.iloc[0] if len(row) > 0 else 'Tiêu đề'}"):
+                            st.write(row.iloc[1] if len(row) > 1 else "Nội dung")
+                except Exception as e:
+                    st.warning("Chưa cấu hình Google Sheets hoặc không thể kết nối.")
+        with tab2:
+            st.header("🌐 Tin quốc tế")
+            with st.spinner("Đang tải dữ liệu..."):
+                try:
+                    feed = feedparser.parse("https://vnexpress.net/rss/so-hoa/bao-mat.rss")
+                    for entry in feed.entries[:5]:
+                        st.markdown(f"**[{entry.title}]({entry.link})**")
+                        st.write(entry.summary)
+                        st.divider()
+                except Exception as e:
+                    st.error("Không thể tải RSS feed.")
 
-if menu == "📰 Tin tức":
-    st.header("📰 Bản tin An toàn thông tin")
-    t1, t2 = st.tabs(["📌 Tin nội bộ", "🌐 Tin quốc tế"])
-    with t1:
-        df = load_data(get_sheet_url("0"))
-        if df is not None:
-            for _, row in df.iterrows():
-                with st.expander(f"📍 {row['Ngày']} - {row['Tiêu đề']}"):
-                    st.write(row['Nội dung'])
-    with t2:
-        feed = feedparser.parse("https://vnexpress.net/rss/so-hoa/bao-mat.rss")
-        if feed.entries:
-            for entry in feed.entries[:5]:
-                st.markdown(f"**[{entry.title}]({entry.link})**")
-                st.caption(f"📅 {entry.published}")
-                st.divider()
+    elif menu == "🚫 Các điều cấm":
+        st.header("🚫 Các điều cấm")
+        with st.spinner("Đang tải dữ liệu..."):
+            try:
+                df_dieu_cam = load_data(get_sheet_url(ID_SHEET_DC_NC, GID_DC))
+                for i, row in df_dieu_cam.iterrows():
+                    st.error(f"❌ {row.iloc[0] if len(row) > 0 else 'Điều cấm'}")
+                    st.write(row.iloc[1] if len(row) > 1 else "Chi tiết")
+            except Exception as e:
+                st.warning("Không thể tải dữ liệu điều cấm.")
 
-elif menu == "🚫 Các điều cấm":
-    st.header("🚫 Quy định nghiêm cấm")
-    df_dc = load_data(get_sheet_url(GID_DC))
-    if df_dc is not None:
-        for _, row in df_dc.iterrows():
-            st.error(f"❌ {row['Danh mục']}")
-            st.write(row['Chi tiết'])
-            st.divider()
+    elif menu == "🛡️ Nguy cơ & Biện pháp":
+        st.header("🛡️ Nguy cơ & Biện pháp")
+        with st.spinner("Đang tải dữ liệu..."):
+            try:
+                df_nguy_co = load_data(get_sheet_url(ID_SHEET_DC_NC, GID_NC))
+                icons = ["⚠️", "🔓", "📧", "🔗", "💻"]
+                for i, row in df_nguy_co.iterrows():
+                    icon = icons[i % len(icons)]
+                    with st.expander(f"{icon} {row.iloc[0] if len(row) > 0 else 'Nguy cơ'}"):
+                        st.info(f"✅ Biện pháp: {row.iloc[1] if len(row) > 1 else 'Biện pháp bảo vệ'}")
+            except Exception as e:
+                st.warning("Không thể tải dữ liệu nguy cơ.")
 
-elif menu == "🛡️ Nguy cơ & Biện pháp":
-    st.header("🛡️ Nhận diện Nguy cơ & Phòng ngừa")
-    st.markdown("---")
-    
-    # Tải dữ liệu từ Google Sheets
-    df_risk = load_data(get_sheet_url(GID_NC))
-    
-    if df_risk is not None:
-        for _, row in df_risk.iterrows():
-            # Xác định icon dựa trên mức độ
-            icon = "🚨" if "Nguy hiểm" in str(row['Mức độ']) else "⚠️"
-            
-            # Hiển thị dạng hộp Expander
-            with st.expander(f"{icon} {row['Nguy cơ']}"):
-                # Trình bày nội dung biện pháp
-                st.markdown("#### **Biện pháp bảo đảm:**")
-                st.info(row['Biện pháp bảo đảm'])
+    elif menu == "🛠️ Công cụ":
+        tab1, tab2, tab3 = st.tabs(["🔐 Mật khẩu", "🔗 Kiểm tra Link", "📷 Quét mã QR"])
+        with tab1:
+            st.header("🔐 Kiểm tra và tạo mật khẩu")
+            input_pass = st.text_input("Nhập mật khẩu để kiểm tra", type="password")
+            if input_pass:
+                score = 0
+                has_upper = any(c.isupper() for c in input_pass)
+                has_lower = any(c.islower() for c in input_pass)
+                has_digit = any(c.isdigit() for c in input_pass)
+                has_special = any(c in "!@#$%^&*" for c in input_pass)
                 
-                # Hiển thị mức độ bằng màu sắc
-                if "Nguy hiểm" in str(row['Mức độ']):
-                    st.error(f"Đánh giá rủi ro: {row['Mức độ']}")
+                if len(input_pass) >= 8: score +=1
+                if has_upper: score +=1
+                if has_lower: score +=1
+                if has_digit: score +=1
+                if has_special: score +=1
+                
+                if score == 5:
+                    st.success("✅ Mật khẩu rất mạnh!")
+                elif score >= 3:
+                    st.warning("⚠️ Mật khẩu trung bình")
                 else:
-                    st.warning(f"Đánh giá rủi ro: {row['Mức độ']}")
-    else:
-        st.error("Không thể tải dữ liệu. Vui lòng kiểm tra tab Nguy cơ trong Sheets!")
+                    st.error("❌ Mật khẩu yếu!")
+            if st.button("🎲 Tạo mật khẩu ngẫu nhiên"):
+                chars = string.ascii_letters + string.digits + "!@#$%^&*"
+                random_pass = ''.join(secrets.choice(chars) for _ in range(16))
+                st.code(random_pass)
+        with tab2:
+            st.header("🔗 Kiểm tra Link")
+            link = st.text_input("Dán link cần kiểm tra")
+            if link:
+                keywords = ["bit.ly", "tinyurl", "shopee", "larksuite", "bom.so"]
+                if any(kw in link.lower() for kw in keywords):
+                    st.error("❌ CẢNH BÁO: Link có khả năng lừa đảo!")
+                elif not link.startswith("https://"):
+                    st.warning("⚠️ CẢNH BÁO: Link không dùng HTTPS (không bảo mật)")
+                else:
+                    st.success("✅ Link an toàn (dùng HTTPS)")
+        with tab3:
+            st.header("📷 Quét mã QR")
+            enable_camera = st.toggle("Bật camera")
+            if enable_camera:
+                img_file = st.camera_input("Chụp mã QR")
+                if img_file:
+                    img = Image.open(img_file)
+                    decoded = decode(img)
+                    if decoded:
+                        st.code(decoded[0].data.decode('utf-8'))
+                    else:
+                        st.warning("Không tìm thấy mã QR trong ảnh.")
 
-elif menu == "🛠️ Công cụ":
-    st.header("🛠️ Trung tâm Công cụ Bảo mật")
-    tab_pw, tab_link, tab_qr = st.tabs(["🔐 Mật khẩu", "🔗 Kiểm tra Link", "📷 Quét mã QR"])
-
-    # --- TAB 1: KIỂM TRA & TẠO MẬT KHẨU ---
-    with tab_pw:
-        st.subheader("Kiểm tra độ mạnh mật khẩu")
-        p = st.text_input("Nhập mật khẩu cần kiểm tra:", type="password")
-        if p:
-            # Thuật toán tính điểm
-            score = 0
-            if len(p) >= 8: score += 1
-            if any(c.isupper() for c in p): score += 1
-            if any(c.isdigit() for c in p): score += 1
-            if any(c in string.punctuation for c in p): score += 1
-            
-            if score == 4: st.success("🔥 Mật khẩu rất mạnh! An toàn tuyệt đối.")
-            elif score == 3: st.warning("⚠️ Mật khẩu khá, nên thêm ký tự đặc biệt.")
-            else: st.error("🚨 Mật khẩu quá yếu! Dễ bị tấn công bẻ khóa.")
+    elif menu == "🚨 Khẩn cấp":
+        st.header("🚨 Quy trình phản ứng khẩn cấp")
+        st.markdown("### 📋 Checklist hành động:")
+        
+        # Initialize checklist states in session_state
+        if 'checklist' not in st.session_state:
+            st.session_state['checklist'] = {
+                'ngat_internet': False,
+                'thong_bao': False,
+                'khong_tat_may': False,
+                'ghi_lai': False
+            }
+        
+        st.session_state['checklist']['ngat_internet'] = st.checkbox(
+            "❌ Ngắt kết nối internet/Wi-Fi ngay lập tức",
+            value=st.session_state['checklist']['ngat_internet']
+        )
+        st.session_state['checklist']['thong_bao'] = st.checkbox(
+            "📞 Thông báo quản trị viên an toàn thông tin",
+            value=st.session_state['checklist']['thong_bao']
+        )
+        st.session_state['checklist']['khong_tat_may'] = st.checkbox(
+            "💾 Không tắt máy, giữ nguyên hiện trạng để điều tra",
+            value=st.session_state['checklist']['khong_tat_may']
+        )
+        st.session_state['checklist']['ghi_lai'] = st.checkbox(
+            "📝 Ghi lại mọi chi tiết nghi ngờ",
+            value=st.session_state['checklist']['ghi_lai']
+        )
         
         st.divider()
-        if st.button("Tạo mật khẩu ngẫu nhiên (12 ký tự)"):
-            chars = string.ascii_letters + string.digits + "!@#$%^&*"
-            new_pw = ''.join(random.choice(chars) for _ in range(12))
-            st.info("Mật khẩu mới của bạn:")
-            st.code(new_pw)
-
-    # --- TAB 2: KIỂM TRA LINK (Sửa lỗi trống) ---
-    with tab_link:
-        st.subheader("Phân tích liên kết nghi vấn")
-        url_in = st.text_input("Dán link cần kiểm tra:", placeholder="https://example.com...")
-        
-        if url_in:
-            url_check = url_in.lower().strip()
-            # Danh sách đen nhận diện nhanh
-            blacklist = ["bit.ly", "tinyurl", "shopee", "larksuite", "naptien", "bom.so"]
-            
-            if any(word in url_check for word in blacklist):
-                st.error("🚨 **NGUY HIỂM:** Link này chứa dấu hiệu lừa đảo hoặc rút gọn không an toàn!")
-            elif not url_check.startswith("https://"):
-                st.warning("⚠️ **RỦI RO:** Link không có HTTPS, dữ liệu có thể bị đánh cắp.")
-            else:
-                st.success("✅ **AN TOÀN:** Chưa phát hiện dấu hiệu bất thường.")
-            
-            # Hiển thị phân tích tên miền
-            try:
-                domain = url_check.split('//')[-1].split('/')[0]
-                st.info(f"🔍 Tên miền gốc: **{domain}**")
-            except:
-                pass
-        else:
-            st.caption("Nhập địa chỉ web để hệ thống bắt đầu quét.")
-
-    # --- TAB 3: QUÉT MÃ QR (Yêu cầu packages.txt) ---
-    with tab_qr:
-        st.subheader("Trình quét mã QR an toàn")
-        from pyzbar.pyzbar import decode
-        
-        cam_on = st.toggle("Mở Camera")
-        img_file = st.camera_input("Đưa mã QR vào khung hình", disabled=not cam_on)
-        
-        if img_file:
-            # Giải mã
-            image = Image.open(img_file)
-            decoded_objects = decode(image)
-            
-            if decoded_objects:
-                for obj in decoded_objects:
-                    qr_data = obj.data.decode("utf-8")
-                    st.success("✅ Đã tìm thấy nội dung:")
-                    st.code(qr_data)
-                    
-                    # Tự động kiểm tra nếu nội dung QR là link
-                    if qr_data.startswith("http"):
-                        if any(w in qr_data.lower() for w in ["bit.ly", "tinyurl", "lark"]):
-                            st.error("🚨 Cảnh báo: Link trong QR có dấu hiệu lừa đảo!")
-            else:
-                st.warning("🔍 Không tìm thấy mã QR. Hãy thử chụp lại rõ nét hơn.")
-
-elif menu == "🚨 Khẩn cấp":
-    st.header("🚨 Phản ứng Sự cố")
-    st.warning("⚡ HÀNH ĐỘNG NGAY:")
-    st.checkbox("1. Ngắt kết nối Internet thiết bị.")
-    st.checkbox("2. Thông báo ngay cho quản trị viên kỹ thuật.")
-    # Sửa lỗi Syntax tại đây bằng cách bọc markdown chuẩn
-    st.markdown("[📞 GỌI HOTLINE HỖ TRỢ](tel:0378765992)", unsafe_allow_html=True)
+        st.markdown("[📞 GỌI HOTLINE HỖ TRỢ](tel:0901234567)")
