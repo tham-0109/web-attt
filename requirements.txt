@@ -3,3 +3,4 @@ pandas
 feedparser
 pyzbar
 pillow
+bcrypt
