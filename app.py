@@ -239,4 +239,4 @@ else:
         )
         
         st.divider()
-        st.markdown("[📞 GỌI HOTLINE HỖ TRỢ](tel:0901234567)")
+        st.markdown("[📞 GỌI HOTLINE HỖ TRỢ](tel:0378756992)")
