@@ -210,7 +210,7 @@ else:
 
     elif menu == "🚨 Khẩn cấp":
         st.header("🚨 Quy trình phản ứng khẩn cấp")
-        st.markdown("### 📋 Checklist hành động:")
+        st.markdown("### 📋 Thứ tự hành động:")
         
         # Initialize checklist states in session_state
         if 'checklist' not in st.session_state:
