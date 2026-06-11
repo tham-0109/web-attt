@@ -5,7 +5,6 @@ from pyzbar.pyzbar import decode
 from PIL import Image
 import secrets
 import string
-import bcrypt
 import time
 
 
@@ -48,18 +47,17 @@ if st.session_state['authenticated']:
         st.session_state['last_activity'] = current_time
 
 try:
-    ID_SHEET_TIN_TUC = st.secrets["id_google_sheet"]
-    ID_SHEET_DC_NC = st.secrets["id_sheet_dieucam_nguyco"]
+    ID_SHEET = st.secrets["id_google_sheet"]
     GID_DC = st.secrets["id_tab_dieucam"]
     GID_NC = st.secrets["id_tab_nguyco"]
-    MAT_KHAU_HASH = st.secrets["password_hash"].encode('utf-8')
+    MAT_KHAU_HE_THONG = st.secrets["password_hethong"]
 except Exception as e:
     st.error("Vui lòng cấu hình các secrets trong Streamlit!")
     st.stop()
 
 
-def get_sheet_url(sheet_id, gid):
-    return f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
+def get_sheet_url(gid):
+    return f"https://docs.google.com/spreadsheets/d/{ID_SHEET}/export?format=csv&gid={gid}"
 
 
 @st.cache_data(ttl=60)
@@ -78,7 +76,7 @@ else:
     password = st.sidebar.text_input("Nhập mật khẩu", type="password", key="password_input")
     
     if password:
-        if bcrypt.checkpw(password.encode('utf-8'), MAT_KHAU_HASH):
+        if password == MAT_KHAU_HE_THONG:
             st.session_state['authenticated'] = True
             st.session_state['login_attempts'] = 0
             st.session_state['last_activity'] = time.time()
@@ -116,7 +114,7 @@ else:
             st.header("📌 Tin nội bộ")
             with st.spinner("Đang tải dữ liệu..."):
                 try:
-                    df_tin_noi_bo = load_data(get_sheet_url(ID_SHEET_TIN_TUC, "0"))
+                    df_tin_noi_bo = load_data(get_sheet_url("0"))
                     for i, row in df_tin_noi_bo.iterrows():
                         with st.expander(f"📄 {row.iloc[0] if len(row) > 0 else 'Tiêu đề'}"):
                             st.write(row.iloc[1] if len(row) > 1 else "Nội dung")
@@ -138,7 +136,7 @@ else:
         st.header("🚫 Các điều cấm")
         with st.spinner("Đang tải dữ liệu..."):
             try:
-                df_dieu_cam = load_data(get_sheet_url(ID_SHEET_DC_NC, GID_DC))
+                df_dieu_cam = load_data(get_sheet_url(GID_DC))
                 for i, row in df_dieu_cam.iterrows():
                     st.error(f"❌ {row.iloc[0] if len(row) > 0 else 'Điều cấm'}")
                     st.write(row.iloc[1] if len(row) > 1 else "Chi tiết")
@@ -149,7 +147,7 @@ else:
         st.header("🛡️ Nguy cơ & Biện pháp")
         with st.spinner("Đang tải dữ liệu..."):
             try:
-                df_nguy_co = load_data(get_sheet_url(ID_SHEET_DC_NC, GID_NC))
+                df_nguy_co = load_data(get_sheet_url(GID_NC))
                 icons = ["⚠️", "🔓", "📧", "🔗", "💻"]
                 for i, row in df_nguy_co.iterrows():
                     icon = icons[i % len(icons)]
